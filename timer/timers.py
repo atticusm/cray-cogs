@@ -166,18 +166,13 @@ class Timer(commands.Cog):
     @timer.command(name="start")
     @commands.bot_has_permissions(embed_links=True)
     async def timer_start(
-        self, ctx: commands.Context, time: TimeConverter, *, name: str = "New Timer!"
+            self, ctx: commands.Context, time: TimeConverter, *, name: str = "New Timer!"
     ):
         """
-        Start a timer.
-
-        `time`: The duration to start the timer. The duration uses basic time units
-                `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks)
-                The maximum duration is 12 hours. change that with `timerset maxduration`.
-
-        `name`: The name of the timer.
+        Start a timer that updates every 5 seconds with the remaining time.
         """
 
+        # Create the timer object
         timer = TimerObj(
             **{
                 "message_id": None,
@@ -191,8 +186,34 @@ class Timer(commands.Cog):
             }
         )
 
+        # Send initial message
+        remaining = cf.humanize_timedelta(timedelta=timer.remaining_seconds)
+        msg = await ctx.send(f"⏳ **{name}** - Time remaining: {remaining}")
+
+        # Assign the message ID to the timer and store
+        timer.message_id = msg.id
         await timer.start()
-        await ctx.tick(message="Timer for `{}` started!".format(name))
+        await self.add_timer(timer)
+
+        # Start the background updater
+        async def update_loop():
+            try:
+                while timer.remaining_time > 0:
+                    await asyncio.sleep(5)
+                    new_remaining = cf.humanize_timedelta(timedelta=timer.remaining_seconds)
+                    try:
+                        await msg.edit(content=f"⏳ **{name}** - Time remaining: {new_remaining}")
+                    except discord.NotFound:
+                        break
+            except asyncio.CancelledError:
+                pass
+            try:
+                await msg.edit(content=f"✅ **{name}** - Timer finished!")
+            except discord.NotFound:
+                pass
+
+        # Start the async update loop
+        self.bot.loop.create_task(update_loop())
 
         self.to_end.clear()
         if self.end_timer.is_running():
