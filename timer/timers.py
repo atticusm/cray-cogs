@@ -29,7 +29,7 @@ def all_min(
 ):
     """A simple one liner function that returns all the least elements of an iterable instead of just one like the builtin `min()`.
 
-    !!!!!! SORT THE DATA PRIOR TO USING THIS FUNCTION !!!!!!
+    !!!!!! SORT THE DATAfuckit PRIOR TO USING THIS FUNCTION !!!!!!
     or pass the `sortkey` argument to this function which will be passed to the `sorted()` builtin to sort the iterable
 
     A small explanation of what it does from bard:
